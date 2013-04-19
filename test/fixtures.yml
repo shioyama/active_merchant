@@ -135,6 +135,10 @@ garanti:
 global_collect:
   merchant_id: MERCHANT_ID
 
+gmo:
+  shop_id: SHOP_ID
+  password: PASSWORD
+
 # login: merchant number
 # password: password for the PEM secret key
 # pem: public certificate and PEM secret key
