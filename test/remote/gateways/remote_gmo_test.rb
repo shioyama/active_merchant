@@ -6,7 +6,7 @@ class RemoteGmoTest < Test::Unit::TestCase
   def setup
     @gateway = GmoGateway.new(fixtures(:gmo))
 
-    @amount = 100
+    @amount = 10000 # spree passes yen in cents... :/
     @credit_card = credit_card('4000100011112224')
     @declined_card = credit_card('4000300011112220')
     @clearly_bad_card = credit_card('123123213123')
@@ -26,13 +26,20 @@ class RemoteGmoTest < Test::Unit::TestCase
 
   def test_refund_with_valid_order_id
     assert response = @gateway.purchase(@amount, @credit_card, @options)
-    assert response = @gateway.refund(@amount, nil, @options)
+    assert response = @gateway.refund(@amount, @options[:order_id], @options )
     assert_success response
     assert_equal "Success", response.message
   end
 
+  def test_refund_with_partial_amount_fails
+    assert response = @gateway.purchase(@amount, @credit_card, @options)
+    assert response = @gateway.refund(@amount - 1, @options[:order_id], @options)
+    assert_failure response
+    assert_equal "No Partial Refunds", response.message
+  end
+
   def test_refund_with_invalid_order_id
-    assert response = @gateway.refund(@amount, nil, @options )
+    assert response = @gateway.refund(@amount, @options[:order_id], @options )
     assert_failure response
     assert_equal 'Order ID not found', response.message
   end
@@ -45,8 +52,7 @@ class RemoteGmoTest < Test::Unit::TestCase
     @gateway.purchase(@amount, @credit_card, @options)
 
     assert response = @gateway.search(@options[:order_id])
-    assert_success response
-    assert_eqaul 'Success', response.message
+    assert !response.nil?
   end
 
   def test_successful_purchase

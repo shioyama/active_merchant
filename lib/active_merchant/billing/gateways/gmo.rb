@@ -12,17 +12,8 @@ module ActiveMerchant #:nodoc:
       self.supported_cardtypes = [:visa, :master, :jcb, :american_express, :diners_club]
       self.homepage_url = 'http://www.gmo-pg.jp/'
       self.display_name = 'GMO Credit Card'
-
-      # notes:
-      # payment "methods"
-      #
-      # 1: One time payment ( we only use this )
-      # 2: Installment payment,
-      # 3: One time payment by bonus,
-      # 4: Installment payment by bonus,
-      # 5: revolving payment
-      #
-      # apparently /(e|m)11010999/ 'errors' are successes lol.
+      self.money_format = :cents
+      self.default_currency = 'JPY'
 
       def initialize(options = {})
         requires!(options, :shop_id, :password)
@@ -38,9 +29,22 @@ module ActiveMerchant #:nodoc:
         commit 'prepare', post
       end
 
+      def deal_with_money(money)
+        # hackhack! - right now spree passes the amount * 100 which
+        # works okay for currencies which use dollars and cents but
+        # not okay for currencies like japanese yen because we end up
+        # getting the value 10000 for an order of 100yen. soo.. divide
+        # by 100 :x this makes this gateway spree specific until spree
+        # is fixed and passes the correct amount.
+        money = (money / 100).round
+        money = amount(money)
+        money.to_i # gmo likes round numbers.
+      end
+
       def purchase(money, credit_card, options = {})
         requires!(options, :order_id)
         order_id = options[:order_id]
+        money = deal_with_money(money)
 
         # creates the order on gmos server
         response = prepare money, order_id
@@ -59,11 +63,13 @@ module ActiveMerchant #:nodoc:
 
           if successful_payment? response
             # i guess this is a success? :x
-            return Response.new true, "Success", response, { :test => test? }
+            return Response.new true, 'Success', response, { test: test?, authorization: order_id }
           end
+
+          return Response.new false, response[:errors], response, { test: test?, authorization: order_id }
         end
 
-        Response.new false, response[:errors], response, { :test => test? }
+        Response.new false, response[:errors], response, { test: test? }
       end
 
       def credit(money, authorization, options = {})
@@ -76,68 +82,38 @@ module ActiveMerchant #:nodoc:
         add_order( post, order_id )
 
         response = commit 'search', post
+        puts "search debug:"
+        a = { o: order_id, post: post, response: response }
+        puts a.inspect
 
-        successful_search?( response ) ? response : false 
+        successful_search?( response ) ? response : false
       end
 
-      def refund(money, authorization, options = {})
+      def refund(money, order_id, options = {})
+        money = deal_with_money(money)
+        if search_response = search(order_id)
 
-        if search_response = search(options[:order_id])
-          # {:OrderID=>["aneworder1366674734"],
-          #  :Status=>["AUTH"],
-          #  :ProcessDate=>["20130423085242"],
-          #  :JobCd=>["AUTH"],
-          #  :AccessID=>["c076e3ffe8165d049812355a3d669550"],
-          #  :AccessPass=>["51b4e044a2b0766dfd27181942968bbf"],
-          #  :ItemCode=>["0000990"],
-          #  :Amount=>["100"],
-          #  :Tax=>["0"],
-          #  :SiteID=>nil,
-          #  :MemberID=>nil,
-          #  :CardNo=>["************2224"],
-          #  :Expire=>["0914"],
-          #  :Method=>["1"],
-          #  :PayTimes=>nil,
-          #  :Forward=>["2a99662"],
-          #  :TranID=>["1304230850111111111111191997"],
-          #  :Approve=>["6721293"],
-          #  :ClientField1=>nil,
-          #  :ClientField2=>nil,
-          #  :ClientField3=>nil}
-          post = {}
-
-          post[:JobCd] = 'RETURN'
-          add_credentials(post, search_response)
-          response = commit 'alter', post
-
-          # check accessid, accesspass, trandi, approve?
-          if successful_prepare? response
-            Response.new true, 'Success', response, { :test => test? }
-          else
-            # test this some how.
-            Response.new false, response[:errors], response, { :test => test? }
+          # only support full refunds right now.
+          if search_response[:Amount].first.to_i != money
+            return Response.new false, "No Partial Refunds", search_response, { test: test? }
           end
 
-          # an example of a response
-           # {:AccessID=>["b9c1fa1696a8d9a797e4a165a199238c"], :AccessPass=>["c21e39db4e49cf06516b28f9191d91c7"], :Forward=>["2a99662"], :Approve=>["6721508"], :TranID=>["1304230917111111111111192150"], :TranDate=>["20130423091939"]}
+          post = {}
+          post[:JobCd] = 'RETURN'
+          add_credentials(post, search_response)
 
-        else
-          Response.new false, 'Order ID not found', {}, { :test => test? }
+          response = commit 'alter', post
+
+          # appropriate response -> success
+          if successful_prepare? response
+            return Response.new true, 'Success', response, { test: test? }
+          end
+
+          # test this some how.
+          return Response.new false, response[:errors], response, { test: test? }
         end
 
-        # # if we have a payment
-        # post = {}
-        # add_credentials( post, response )
-        # # if payment was today -> void
-        # # else return
-        # post[:JobCd] = 'RETURN'
-        # response = commit( 'alter', post )
-
-        # if successful_refund? response
-
-        # end
-
-        # Response.new false, response[:errors], response, { :test => test? }
+        Response.new false, 'Order ID not found', {}, { test: test? }
       end
 
       private
@@ -150,10 +126,6 @@ module ActiveMerchant #:nodoc:
 
         if response[:ErrInfo].present?
           errors = gmo_errors(response[:ErrInfo])
-
-          puts "\nERRORS-------------------------------------------"
-          puts errors
-          puts "-------------------------------------------------\n"
 
           response[:errors] = errors
         end
