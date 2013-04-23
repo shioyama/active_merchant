@@ -20,25 +20,20 @@ module ActiveMerchant #:nodoc:
         super
       end
 
-      def prepare( money, order_id )
-        post = {}
-        add_money( post, money )
-        add_order( post, order_id )
-        post[:JobCd] = 'AUTH'
+      def void(order_id, options={})
+        if search_response = search(order_id)
+          post = {}
+          post[:JobCd] = 'VOID'
 
-        commit 'prepare', post
-      end
+          add_order( post, order_id )
+          add_credentials( post, search_response )
 
-      def deal_with_money(money)
-        # hackhack! - right now spree passes the amount * 100 which
-        # works okay for currencies which use dollars and cents but
-        # not okay for currencies like japanese yen because we end up
-        # getting the value 10000 for an order of 100yen. soo.. divide
-        # by 100 :x this makes this gateway spree specific until spree
-        # is fixed and passes the correct amount.
-        money = (money / 100).round
-        money = amount(money)
-        money.to_i # gmo likes round numbers.
+          response = commit 'alter', post
+
+          return Response.new true, 'Success', response, { test: test? }
+        end
+
+        Response.new false, 'Order ID not found', {}, { test: test? }
       end
 
       def purchase(money, credit_card, options = {})
@@ -51,13 +46,12 @@ module ActiveMerchant #:nodoc:
 
         if successful_prepare? response
           post = {}
+          post[:Method] = 1
+          post[:JobCd] = 'CAPTURE'
+
           add_credit_card( post, credit_card )
           add_credentials( post, response )
           add_order( post, order_id )
-
-          # see payment method notes
-          post[:Method] = 1
-          post[:JobCd] = 'CAPTURE'
 
           response = commit 'pay', post
 
@@ -77,25 +71,13 @@ module ActiveMerchant #:nodoc:
         refund(money, authorization, options)
       end
 
-      def search( order_id )
-        post = {}
-        add_order( post, order_id )
-
-        response = commit 'search', post
-        puts "search debug:"
-        a = { o: order_id, post: post, response: response }
-        puts a.inspect
-
-        successful_search?( response ) ? response : false
-      end
-
       def refund(money, order_id, options = {})
         money = deal_with_money(money)
         if search_response = search(order_id)
 
           # only support full refunds right now.
           if search_response[:Amount].first.to_i != money
-            return Response.new false, "No Partial Refunds", search_response, { test: test? }
+            return Response.new false, 'No Partial Refunds', search_response, { test: test? }
           end
 
           post = {}
@@ -117,6 +99,25 @@ module ActiveMerchant #:nodoc:
       end
 
       private
+
+      def prepare( money, order_id )
+        post = {}
+        post[:JobCd] = 'CAPTURE'
+
+        add_money( post, money )
+        add_order( post, order_id )
+
+        commit 'prepare', post
+      end
+
+      def search( order_id )
+        post = {}
+        add_order( post, order_id )
+
+        response = commit 'search', post
+
+        successful_search?( response ) ? response : false
+      end
 
       def commit( action_name, params={} )
         gateway_url = action( action_name )
@@ -229,6 +230,19 @@ module ActiveMerchant #:nodoc:
 
         post.merge(params).map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join("&")
       end
+
+      def deal_with_money(money)
+        # hackhack! - right now spree passes the amount * 100 which
+        # works okay for currencies which use dollars and cents but
+        # not okay for currencies like japanese yen because we end up
+        # getting the value 10000 for an order of 100yen. soo.. divide
+        # by 100 :x this makes this gateway spree specific until spree
+        # is fixed and passes the correct amount.
+        money = (money / 100).round
+        money = amount(money)
+        money.to_i # gmo likes round numbers.
+      end
+
     end
   end
 end
