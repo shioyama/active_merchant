@@ -12,10 +12,41 @@ class RemoteGmoTest < Test::Unit::TestCase
     @clearly_bad_card = credit_card('123123213123')
 
     @options = {
-      :order_id => "aneworder-#{DateTime.current.to_time.to_i}",
+      :order_id => "blah-#{DateTime.current.to_time.to_i}-#{Random.rand(99999)}",
       :billing_address => address,
       :description => 'Store Purchase'
     }
+  end
+
+  def test_find_existing_order
+    order_id = "aneworder1366672295"
+    assert response = @gateway.search(order_id)
+    assert_equal order_id, response[:OrderID].first
+  end
+
+  def test_refund_with_valid_order_id
+    assert response = @gateway.purchase(@amount, @credit_card, @options)
+    assert response = @gateway.refund(@amount, nil, @options)
+    assert_success response
+    assert_equal "Success", response.message
+  end
+
+  def test_refund_with_invalid_order_id
+    assert response = @gateway.refund(@amount, nil, @options )
+    assert_failure response
+    assert_equal 'Order ID not found', response.message
+  end
+
+  def test_unsuccessful_search
+    assert_equal false, @gateway.search(@options[:order_id])
+  end
+
+  def test_successful_search
+    @gateway.purchase(@amount, @credit_card, @options)
+
+    assert response = @gateway.search(@options[:order_id])
+    assert_success response
+    assert_eqaul 'Success', response.message
   end
 
   def test_successful_purchase
@@ -55,23 +86,4 @@ class RemoteGmoTest < Test::Unit::TestCase
     # no shop id, no password, no shop & password found.
     assert_equal 'ショップIDが指定されていません。, ショップパスワードが指定されていません。, and 指定されたIDとパスワードのショップが存在しません。', response.message
   end
-
-  # def test_authorize_and_capture
-  #   amount = @amount
-  #   assert auth = @gateway.authorize(amount, @credit_card, @options)
-  #   assert_success auth
-  #   assert_equal 'Success', auth.message
-  #   assert auth.authorization
-  #   assert capture = @gateway.capture(amount, auth.authorization)
-  #   assert_success capture
-  # end
-
-  # def test_failed_capture
-  #   assert response = @gateway.capture(@amount, '')
-  #   assert_failure response
-  #   assert_equal 'REPLACE WITH GATEWAY FAILURE MESSAGE', response.message
-  # end
-
-  # def test_invalid_login
-  # end
 end

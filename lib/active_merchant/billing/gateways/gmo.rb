@@ -33,11 +33,6 @@ module ActiveMerchant #:nodoc:
         post = {}
         add_money( post, money )
         add_order( post, order_id )
-
-        # not sure if this only authorizes a payment. i can't call AUTH then CAPTURE
-        # on the same order id. i get an error along the lines of can't ask for money
-        # twice on the same order id and there is no difference in the response when
-        # using AUTH or CAPTURE. GMOPaymentCC uses AUTH so i'll use AUTH.
         post[:JobCd] = 'AUTH'
 
         commit 'prepare', post
@@ -58,10 +53,9 @@ module ActiveMerchant #:nodoc:
 
           # see payment method notes
           post[:Method] = 1
+          post[:JobCd] = 'CAPTURE'
 
           response = commit 'pay', post
-
-          raise [response.inspect, post].inspect
 
           if successful_payment? response
             # i guess this is a success? :x
@@ -70,6 +64,80 @@ module ActiveMerchant #:nodoc:
         end
 
         Response.new false, response[:errors], response, { :test => test? }
+      end
+
+      def credit(money, authorization, options = {})
+        deprecated CREDIT_DEPRECATION_MESSAGE
+        refund(money, authorization, options)
+      end
+
+      def search( order_id )
+        post = {}
+        add_order( post, order_id )
+
+        response = commit 'search', post
+
+        successful_search?( response ) ? response : false 
+      end
+
+      def refund(money, authorization, options = {})
+
+        if search_response = search(options[:order_id])
+          # {:OrderID=>["aneworder1366674734"],
+          #  :Status=>["AUTH"],
+          #  :ProcessDate=>["20130423085242"],
+          #  :JobCd=>["AUTH"],
+          #  :AccessID=>["c076e3ffe8165d049812355a3d669550"],
+          #  :AccessPass=>["51b4e044a2b0766dfd27181942968bbf"],
+          #  :ItemCode=>["0000990"],
+          #  :Amount=>["100"],
+          #  :Tax=>["0"],
+          #  :SiteID=>nil,
+          #  :MemberID=>nil,
+          #  :CardNo=>["************2224"],
+          #  :Expire=>["0914"],
+          #  :Method=>["1"],
+          #  :PayTimes=>nil,
+          #  :Forward=>["2a99662"],
+          #  :TranID=>["1304230850111111111111191997"],
+          #  :Approve=>["6721293"],
+          #  :ClientField1=>nil,
+          #  :ClientField2=>nil,
+          #  :ClientField3=>nil}
+          post = {}
+
+          post[:JobCd] = 'RETURN'
+          add_credentials(post, search_response)
+          response = commit 'alter', post
+
+          # check accessid, accesspass, trandi, approve?
+          if successful_prepare? response
+            Response.new true, 'Success', response, { :test => test? }
+          else
+            # test this some how.
+            Response.new false, response[:errors], response, { :test => test? }
+          end
+
+          # an example of a response
+           # {:AccessID=>["b9c1fa1696a8d9a797e4a165a199238c"], :AccessPass=>["c21e39db4e49cf06516b28f9191d91c7"], :Forward=>["2a99662"], :Approve=>["6721508"], :TranID=>["1304230917111111111111192150"], :TranDate=>["20130423091939"]}
+
+        else
+          Response.new false, 'Order ID not found', {}, { :test => test? }
+        end
+
+        # # if we have a payment
+        # post = {}
+        # add_credentials( post, response )
+        # # if payment was today -> void
+        # # else return
+        # post[:JobCd] = 'RETURN'
+        # response = commit( 'alter', post )
+
+        # if successful_refund? response
+
+        # end
+
+        # Response.new false, response[:errors], response, { :test => test? }
       end
 
       private
@@ -83,9 +151,9 @@ module ActiveMerchant #:nodoc:
         if response[:ErrInfo].present?
           errors = gmo_errors(response[:ErrInfo])
 
-          puts "\n-------------------------------------------------"
+          puts "\nERRORS-------------------------------------------"
           puts errors
-          puts "-------------------------------------------------"
+          puts "-------------------------------------------------\n"
 
           response[:errors] = errors
         end
@@ -120,9 +188,6 @@ module ActiveMerchant #:nodoc:
       # gmo gives us key value pairs in the format of
       # Key=Value|Value|Value&Key2=Value
       def parse( string )
-        puts "\n-----------PARSING------------------------"
-        puts string
-        puts "------------------------------------------"
         data = {}
 
         pairs = string.split('&')
@@ -157,6 +222,15 @@ module ActiveMerchant #:nodoc:
       def add_credentials( post, prepare_response )
         post[:AccessID] = prepare_response[:AccessID].first
         post[:AccessPass] = prepare_response[:AccessPass].first
+      end
+
+      def successful_search? response
+        successful_response?(response) &&
+        successful_prepare?(response) &&
+        successful_payment?(response) &&
+        response[:JobCd].present? &&
+        response[:Amount].present? &&
+        response[:Tax].present?
       end
 
       def successful_prepare? response
