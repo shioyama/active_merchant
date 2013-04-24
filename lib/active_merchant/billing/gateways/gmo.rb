@@ -39,7 +39,6 @@ module ActiveMerchant #:nodoc:
       def purchase(money, credit_card, options = {})
         requires!(options, :order_id)
         order_id = options[:order_id]
-        money = deal_with_money(money)
 
         # creates the order on gmos server
         response = prepare money, order_id
@@ -72,7 +71,6 @@ module ActiveMerchant #:nodoc:
       end
 
       def refund(money, order_id, options = {})
-        money = deal_with_money(money)
         if search_response = search(order_id)
 
           # only support full refunds right now.
@@ -179,7 +177,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def add_money( post, money )
-        post[:Amount] = money
+        post[:Amount] = amount(money)
       end
 
       def add_order( post, order_id )
@@ -230,19 +228,6 @@ module ActiveMerchant #:nodoc:
 
         post.merge(params).map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join("&")
       end
-
-      def deal_with_money(money)
-        # hackhack! - right now spree passes the amount * 100 which
-        # works okay for currencies which use dollars and cents but
-        # not okay for currencies like japanese yen because we end up
-        # getting the value 10000 for an order of 100yen. soo.. divide
-        # by 100 :x this makes this gateway spree specific until spree
-        # is fixed and passes the correct amount.
-        money = (money / 100).round
-        money = amount(money)
-        money.to_i # gmo likes round numbers.
-      end
-
     end
   end
 end
