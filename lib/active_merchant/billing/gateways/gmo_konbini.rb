@@ -92,8 +92,8 @@ module ActiveMerchant #:nodoc:
       end
 
       def add_customer_info( post, billing_address )
-        post[:CustomerName] = billing_address[:name] #.. this this last+first
-        post[:CustomerKana] = '???'
+        post[:CustomerName] = billing_address[:name] # .. this this last+first
+        post[:CustomerKana] = billing_address[:kana] # spree_kana specific
         post[:TelNo] = billing_address[:phone].gsub(/\D/,'')
       end
     end
