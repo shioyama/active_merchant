@@ -96,10 +96,6 @@ module ActiveMerchant #:nodoc:
         post[:CustomerKana] = '???'
         post[:TelNo] = billing_address[:phone].gsub(/\D/,'')
       end
-
-      def add_order( post, order_id )
-        post[:OrderID] = order_id.split('-').first # grab the rnumber
-      end
     end
   end
 end

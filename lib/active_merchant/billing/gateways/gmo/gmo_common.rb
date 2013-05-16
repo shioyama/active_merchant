@@ -4,7 +4,7 @@ module ActiveMerchant #:nodoc:
       self.test_url = 'https://pt01.mul-pay.jp'
       self.live_url = 'https://p01.mul-pay.jp'
       self.homepage_url = 'http://www.gmo-pg.jp/'
-      self.money_format = :cents
+      self.money_format = :dollars
       self.default_currency = 'JPY'
 
       # gmo gives us key value pairs in the format of
@@ -86,11 +86,16 @@ module ActiveMerchant #:nodoc:
       end
 
       def add_money( post, money )
-        post[:Amount] = amount(money)
+        post[:Amount] = amount(money).to_i
       end
 
+      # we use this with spree and spree sends an order_id that changes
+      # depending on the state of the order. (rnumber-something)
+      # if there's a - we chop off that something. maybe theres a better
+      # way to do this...?
       def add_order( post, order_id )
-        post[:OrderID] = order_id
+        order_id = order_id.split('-').first if order_id.include? '-'
+        post[:OrderID] = order_id  # grab the rnumber
       end
 
       def add_credentials( post, prepare_response )
