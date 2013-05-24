@@ -36,7 +36,8 @@ module ActiveMerchant #:nodoc:
         requires!(options, :order_id)
         requires!(options, :billing_address) # the store the person will pay at
 
-        order_id, convenience_id = options[:order_id], options[:convenience_id]
+        order_id = options[:order_id]
+        convenience_id = konbini.convenience_id
 
         # creates the order on gmos server
         response = prepare money, order_id
