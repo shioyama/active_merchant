@@ -34,7 +34,16 @@ module ActiveMerchant #:nodoc:
 
       def authorize(money, konbini, options = {})
         requires!(options, :order_id)
-        requires!(options, :billing_address) # the store the person will pay at
+        requires!(options, :billing_address)
+        requires!(options[:billing_address], :kana)
+
+        unless konbini && konbini.convenience_id
+          return Response.new false, 'no convenience store selected', {}, { test: test? }
+        end
+
+        if options[:billing_address][:kana].blank?
+          return Response.new false, 'kana not specified', {}, { test: test? }
+        end
 
         order_id = options[:order_id]
         convenience_id = konbini.convenience_id
