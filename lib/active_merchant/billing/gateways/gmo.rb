@@ -16,33 +16,40 @@ module ActiveMerchant #:nodoc:
         super
       end
 
+      # If you get here by google and are interested in using GMO
+      # in active_merchant then have a look at the following ref.
+      # This branch/code is very specific to our codebase. The ref
+      # below is the last commit where this gateway could be used
+      # without any external code. glhf. - DylanJ
+      #
+      # ref: b99abb5e38d8995888904e5592ce1dddd2b43b35
       def purchase(money, credit_card, options = {})
         requires!(options, :order_id)
-        order_id = options[:order_id]
+        requires!(options, :AccessID)
+        requires!(options, :AccessPass)
+        order_id = format_order_id( options[:order_id] )
 
-        # creates the order on gmos server
-        response = prepare money, order_id
+        post = {}
+        post[:Method] = 1
+        post[:JobCd] = 'CAPTURE'
 
-        if successful_prepare? response
-          post = {}
-          post[:Method] = 1
-          post[:JobCd] = 'CAPTURE'
+        post[:AccessID] = options[:AccessID]
+        post[:AccessPass] = options[:AccessPass]
 
-          add_credit_card( post, credit_card )
-          add_credentials( post, response )
-          add_order( post, order_id )
+        add_credit_card( post, credit_card )
+        add_order( post, order_id )
 
-          response = commit 'pay', post
+        response = commit 'pay', post
 
-          if successful_payment? response
-            # i guess this is a success? :x
-            return Response.new true, 'Success', response, { test: test?, authorization: order_id }
-          end
-
-          return Response.new false, response[:errors], response, { test: test?, authorization: order_id }
+        if successful_payment? response
+          return Response.new true, 'Success', response, { test: test?, authorization: order_id }
         end
 
-        Response.new false, response[:errors], response, { test: test? }
+        Response.new false, response[:errors], response, { test: test?, authorization: order_id }
+      end
+
+      def capture(*args)
+        Response.new true, 'Success', {}, { test: test? }
       end
 
       def void(order_id, options={})
@@ -92,7 +99,6 @@ module ActiveMerchant #:nodoc:
         Response.new false, 'Order ID not found', {}, { test: test? }
       end
 
-      private
       def prepare( money, order_id )
         post = {}
         post[:JobCd] = 'CAPTURE'
@@ -102,6 +108,8 @@ module ActiveMerchant #:nodoc:
 
         commit 'prepare', post
       end
+
+      private
 
       def action_uri( name )
         case name

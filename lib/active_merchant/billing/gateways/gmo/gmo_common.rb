@@ -30,7 +30,6 @@ module ActiveMerchant #:nodoc:
         post.merge(params).map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join("&")
       end
 
-
       def search( order_id )
         post = {}
         add_order( post, order_id )
@@ -62,20 +61,6 @@ module ActiveMerchant #:nodoc:
         "#{url}#{path}"
       end
 
-      # gmo gives us key value pairs in the format of
-      # Key=Value|Value|Value&Key2=Value
-      def parse( string )
-        data = {}
-
-        pairs = string.split('&')
-        pairs.each do |kv|
-          key, values = kv.split('=')
-          data[key.to_sym] = values.nil? ? nil : values.split('|')
-        end
-
-        data
-      end
-
       def post_data(params = {})
         post = {}
 
@@ -89,13 +74,13 @@ module ActiveMerchant #:nodoc:
         post[:Amount] = amount(money).to_i
       end
 
-      # we use this with spree and spree sends an order_id that changes
-      # depending on the state of the order. (rnumber-something)
-      # if there's a - we chop off that something. maybe theres a better
-      # way to do this...?
       def add_order( post, order_id )
+        post[:OrderID] = format_order_id( order_id )  # grab the rnumber
+      end
+
+      def format_order_id( order_id )
         order_id = order_id.split('-').first if order_id.include? '-'
-        post[:OrderID] = order_id  # grab the rnumber
+        order_id
       end
 
       def add_credentials( post, prepare_response )
