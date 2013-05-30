@@ -45,32 +45,27 @@ module ActiveMerchant #:nodoc:
           return Response.new false, 'kana not specified', {}, { test: test? }
         end
 
-        order_id = options[:order_id]
+        order_id = format_order_id(options[:order_id])
         convenience_id = konbini.convenience_id
 
-        # creates the order on gmos server
-        response = prepare money, order_id
+        post = {}
 
-        if successful_prepare? response
-          post = {}
+        post[:AccessID] = options[:AccessID]
+        post[:AccessPass] = options[:AccessPass]
 
-          add_credentials( post, response )
-          add_convenience_store( post, konbini.convenience_id )
-          add_customer_info( post, options[:billing_address] )
-          add_order( post, order_id )
+        add_convenience_store( post, konbini.convenience_id )
+        add_customer_info( post, options[:billing_address] )
+        add_order( post, order_id )
 
-          response = commit 'pay', post
+        response = commit 'pay', post
 
-          if successful_konbini? response
-            update_konbini_information(konbini, response)
+        if successful_konbini? response
+          update_konbini_information(konbini, response)
 
-            return Response.new true, 'Success', response, { test: test? }
-          end
-
-          return Response.new false, response[:errors], response, { test: test? }
+          return Response.new true, 'Success', response, { test: test? }
         end
 
-        Response.new false, response[:errors], response, { test: test? }
+        return Response.new false, response[:errors], response, { test: test? }
       end
 
       private
