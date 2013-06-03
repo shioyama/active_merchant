@@ -152,7 +152,7 @@ module ActiveMerchant #:nodoc:
       def expiry credit_card
         year  = format(credit_card.year, :two_digits)
         month = format(credit_card.month, :two_digits)
-        "#{month}#{year}"
+        "#{year}#{month}"
       end
     end
   end
