@@ -77,7 +77,7 @@ module ActiveMerchant #:nodoc:
         if search_response = search(order_id)
 
           # only support full refunds right now.
-          if search_response[:Amount].first.to_i != money
+          if search_response[:Amount].first.to_i != amount(money).to_i
             return Response.new false, 'No Partial Refunds', search_response, { test: test? }
           end
 
