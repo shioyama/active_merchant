@@ -4,7 +4,7 @@ module ActiveMerchant #:nodoc:
       self.test_url = 'https://pt01.mul-pay.jp'
       self.live_url = 'https://p01.mul-pay.jp'
       self.homepage_url = 'http://www.gmo-pg.jp/'
-      self.money_format = :dollars
+      self.money_format = :cents
       self.default_currency = 'JPY'
 
       # gmo gives us key value pairs in the format of
