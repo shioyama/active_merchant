@@ -56,6 +56,7 @@ module ActiveMerchant #:nodoc:
         add_convenience_store( post, konbini.convenience_id )
         add_customer_info( post, options[:billing_address] )
         add_order( post, order_id )
+        post[:PaymentTermDay] = options[:payment_term_day] if options[:payment_term_day]
 
         response = commit 'pay', post
 
