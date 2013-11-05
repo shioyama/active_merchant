@@ -7,6 +7,8 @@ module ActiveMerchant #:nodoc:
     class GmoKonbiniGateway < GmoCommon
       include GmoErrors
 
+      JST = "+0900"
+
       self.supported_countries = ['JA']
       self.homepage_url = 'http://www.gmo-pg.jp/'
       self.display_name = 'GMO Konbini'
@@ -89,9 +91,10 @@ module ActiveMerchant #:nodoc:
 
       def update_konbini_information konbini, response
         konbini.confirmation = response[:ConfNo].first
-        konbini.end_date = response[:PaymentTerm].first.to_s.to_datetime # hope we have activesupport
+        # Response time(PaymentTerm and TranDate) is tokyo time (i.e. 20130101235959). But they have not time zone.
+        konbini.end_date = response[:PaymentTerm].first.to_s.concat(JST).to_datetime # hope we have activesupport
         konbini.receipt = response[:ReceiptNo].first
-        konbini.transaction_date = response[:TranDate].first.to_s.to_datetime
+        konbini.transaction_date = response[:TranDate].first.to_s.concat(JST).to_datetime
         konbini.check_string = response[:CheckString].first
         konbini.save!
       end
