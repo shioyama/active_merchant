@@ -15,7 +15,7 @@ module ActiveMerchant #:nodoc:
 
       def initialize(options = {})
         requires!(options, :shop_id, :password, :shop_name, :shop_phone, :shop_hours)
-        @shop_name = options[:shop_name]
+        @shop_name = options[:shop_name].encode('Shift_JIS')
         @shop_phone = options[:shop_phone]
         @shop_hours = options[:shop_hours]
         super
