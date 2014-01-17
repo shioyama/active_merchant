@@ -34,6 +34,10 @@ module ActiveMerchant #:nodoc:
         commit 'prepare', post
       end
 
+      def self.supported_cardtypes
+        [:konbini]
+      end
+
       def authorize(money, konbini, options = {})
         requires!(options, :order_id)
         requires!(options, :billing_address)
