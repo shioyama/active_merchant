@@ -14,6 +14,7 @@ require 'money'
 require 'mocha'
 require 'yaml'
 require 'json'
+require 'itaiji'
 require 'active_merchant'
 require 'comm_stub'
 
