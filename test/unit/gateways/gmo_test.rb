@@ -16,10 +16,10 @@ class GmoTest < Test::Unit::TestCase
 
   def test_parse_returns_correct_hash
     test_response = "Key1=Value1|Value2|Value3&Key2=Value4&Key3=Value5&Key4="
-    exp = { "Key1" => ["Value1", "Value2", "Value3"],
-            "Key2" => ["Value4"],
-            "Key3" => ["Value5"],
-            "Key4" => nil }
+    exp = { :Key1 => ["Value1", "Value2", "Value3"],
+            :Key2 => ["Value4"],
+            :Key3 => ["Value5"],
+            :Key4 => nil }
 
     assert_equal exp, @gateway.send(:parse, test_response)
   end
