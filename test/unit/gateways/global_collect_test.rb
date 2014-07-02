@@ -4,7 +4,7 @@ class GlobalCollectTest < Test::Unit::TestCase
   include CommStub
 
   def setup
-    @gateway = GlobalCollectGateway.new(:merchant_id => '1')
+    @gateway = GlobalCollectGateway.new(:merchant_id => '1', :test => true)
     @credit_card = credit_card
     @amount = 100
     @authorization = "#{order_id}|1|1"
