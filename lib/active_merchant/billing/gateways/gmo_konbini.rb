@@ -1,4 +1,5 @@
 #encoding: utf-8
+require "itaiji"
 require File.dirname(__FILE__) + '/gmo/gmo_errors'
 require File.dirname(__FILE__) + '/gmo/gmo_common'
 
