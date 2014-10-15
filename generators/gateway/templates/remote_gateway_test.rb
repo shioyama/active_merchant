@@ -42,7 +42,8 @@ class Remote<%= class_name %>Test < Test::Unit::TestCase
   def test_failed_capture
     assert response = @gateway.capture(@amount, '')
     assert_failure response
-    assert_equal 'REPLACE WITH GATEWAY FAILURE MESSAGE', response.message
+    assert_match %r{REPLACE WITH FAILED PURCHASE MESSAGE}, response.message
+    assert_equal Gateway::STANDARD_ERROR_CODE[:card_declined], response.error_code
   end
 
   def test_invalid_login

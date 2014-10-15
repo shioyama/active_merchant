@@ -16,8 +16,9 @@ module ActiveMerchant #:nodoc:
       # The name of the gateway
       self.display_name = 'New Gateway'
 
-      def initialize(options = {})
-        #requires!(options, :login, :password)
+      STANDARD_ERROR_CODE_MAPPING = {}
+
+      def initialize(options={})
         super
       end
 
