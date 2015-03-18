@@ -34,8 +34,13 @@ module ActiveMerchant #:nodoc:
         }
         params[:external_order_num] = options[:order_id] if options[:order_id]
         params[:tax] = options[:tax] if options[:tax]
+        params[:fraud_details] = fraud_details(options) unless fraud_details(options).empty?
 
-        commit(params)
+        commit("/payments", params)
+      end
+
+      def refund(money, identification, options = {})
+        commit("/payments/#{identification}/refund", {})
       end
 
       def capture(*args)
@@ -55,6 +60,15 @@ module ActiveMerchant #:nodoc:
         details
       end
 
+      def fraud_details(options)
+        details = {}
+        details[:customer_ip] = options[:ip] if options[:ip]
+        details[:customer_email] = options[:email] if options[:email]
+        details[:browser_language] = options[:browser_language] if options[:browser_language]
+        details[:browser_user_agent] = options[:browser_user_agent] if options[:browser_user_agent]
+        details
+      end
+
       def credit_card_payment_details(card, options)
         details = {}
         details[:type] = 'credit_card'
@@ -67,10 +81,10 @@ module ActiveMerchant #:nodoc:
         details
       end
 
-      def api_request(data)
+      def api_request(path, data)
         raw_response = nil
         begin
-          raw_response = ssl_post("#{url}/payments", data, headers)
+          raw_response = ssl_post("#{url}#{path}", data, headers)
         rescue ResponseError => e
           raw_response = e.response.body
         end
@@ -78,8 +92,8 @@ module ActiveMerchant #:nodoc:
         JSON.parse(raw_response)
       end
 
-      def commit(params)
-        response = api_request(params.to_json)
+      def commit(path, params)
+        response = api_request(path, params.to_json)
         success = !response.key?("error")
         message = success ? "Transaction succeeded" : response["error"]["message"]
         Response.new(success, message, response,
