@@ -170,6 +170,11 @@ module ActiveMerchant #:nodoc:
         xml = post_data(action, params)
         url = test?? test_url : live_url
         headers = { 'Content-Type' => 'text/xml; charset=utf-8' }
+        proxy_env = ENV['http_proxy']
+        if proxy_env
+          proxy = URI.parse(proxy_env)
+          headers.merge!({http_proxyaddr: proxy.host, http_proxyport: proxy.port})
+        end
         parse(ssl_post(url, xml, headers))
       end
 
