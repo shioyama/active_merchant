@@ -173,7 +173,7 @@ module ActiveMerchant #:nodoc:
         proxy_env = ENV['http_proxy']
         if proxy_env
           proxy = URI.parse(proxy_env)
-          headers.merge!({http_proxyaddr: proxy.host, http_proxyport: proxy.port})
+          headers.merge!({http_proxyaddr: proxy.host, http_proxyport: proxy.port.to_s})
         end
         parse(ssl_post(url, xml, headers))
       end
