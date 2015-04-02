@@ -170,11 +170,6 @@ module ActiveMerchant #:nodoc:
         xml = post_data(action, params)
         url = test?? test_url : live_url
         headers = { 'Content-Type' => 'text/xml; charset=utf-8' }
-        proxy_env = ENV['http_proxy']
-        if proxy_env
-          proxy = URI.parse(proxy_env)
-          headers.merge!({http_proxyaddr: proxy.host, http_proxyport: proxy.port.to_s})
-        end
         parse(ssl_post(url, xml, headers))
       end
 
@@ -202,6 +197,18 @@ module ActiveMerchant #:nodoc:
         year  = format(credit_card.year, :two_digits)
         month = format(credit_card.month, :two_digits)
         "#{month}#{year}"
+      end
+
+      # override Activemerchant::PostsData in active_utils gem.
+      def new_connection(endpoint)
+        conn = super
+        proxy_env = ENV['http_proxy']
+        if proxy_env
+          proxy = URI.parse(proxy_env)
+          conn.proxy_address = proxy.host
+          conn.proxy_port = proxy.port
+        end
+        conn
       end
     end
   end
