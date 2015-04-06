@@ -98,5 +98,4 @@ class RemoteStripeTest < Test::Unit::TestCase
     assert_failure response
     assert_equal "Invalid API Key provided: active_merchant_test", response.message
   end
-
 end

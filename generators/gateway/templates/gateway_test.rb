@@ -34,7 +34,41 @@ class <%= class_name %>Test < Test::Unit::TestCase
 
     assert response = @gateway.purchase(@amount, @credit_card, @options)
     assert_failure response
-    assert response.test?
+    assert_equal Gateway::STANDARD_ERROR_CODE[:card_declined], response.error_code
+  end
+
+  def test_successful_authorize
+  end
+
+  def test_failed_authorize
+  end
+
+  def test_successful_capture
+  end
+
+  def test_failed_capture
+  end
+
+  def test_successful_refund
+  end
+
+  def test_failed_refund
+  end
+
+  def test_successful_void
+  end
+
+  def test_failed_void
+  end
+
+  def test_successful_verify
+  end
+
+  def test_successful_verify_with_failed_void
+  end
+
+  def test_failed_verify
+>>>>>>> 1a0c650... Add error_code to ActiveMerchant::Billing::Response and use it with strip error codes
   end
 
   private
