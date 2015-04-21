@@ -68,7 +68,6 @@ class <%= class_name %>Test < Test::Unit::TestCase
   end
 
   def test_failed_verify
->>>>>>> 1a0c650... Add error_code to ActiveMerchant::Billing::Response and use it with strip error codes
   end
 
   private
