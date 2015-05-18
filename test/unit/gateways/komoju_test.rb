@@ -38,6 +38,14 @@ class KomojuTest < Test::Unit::TestCase
     assert response.test?
   end
 
+  def test_successful_konbini_capture
+    response = @gateway.capture(@amount, @konbini, @options)
+    assert_success response
+
+    assert_equal response.message, "Success"
+    assert response.test?
+  end
+
   def test_failed_purchase
     raw_response = mock
     raw_response.expects(:body).returns(JSON.generate(failed_purchase_response))
