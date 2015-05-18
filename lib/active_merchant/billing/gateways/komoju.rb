@@ -38,6 +38,10 @@ module ActiveMerchant #:nodoc:
         commit(params)
       end
 
+      def capture(*args)
+        Response.new true, 'Success', {}, { test: test? }
+      end
+
       private
 
       def payment_details(payment, options)
