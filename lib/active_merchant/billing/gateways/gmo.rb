@@ -37,6 +37,7 @@ module ActiveMerchant #:nodoc:
         post[:AccessPass] = options[:AccessPass]
 
         add_credit_card( post, credit_card )
+        add_money( post, money )
         add_order( post, order_id )
 
         response = commit 'pay', post
