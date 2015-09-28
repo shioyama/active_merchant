@@ -68,13 +68,19 @@ class KomojuTest < Test::Unit::TestCase
   end
 
   def test_successful_credit_card_refund
+    total = 108
+    refund_message = "Full Refund"
     successful_response = successful_credit_card_refund_response
     @gateway.expects(:ssl_post).returns(JSON.generate(successful_response))
 
-    response = @gateway.refund(@amount,  "7e8c55a54256ce23e387f2838c", @options)
+    @options.update(:refund_message => refund_message)
+    response = @gateway.refund(total,  "7e8c55a54256ce23e387f2838c", @options)
     assert_success response
 
     assert_equal successful_response["id"], response.authorization
+    assert_equal total, response.params["amount_refunded"]
+    assert_equal total, response.params["refunds"][0]["amount"]
+    assert_equal refund_message, response.params["refunds"][0]["description"]
     assert response.test?
   end
 
@@ -133,7 +139,16 @@ class KomojuTest < Test::Unit::TestCase
       "metadata" => {
         "order_id" => "262f2a92-542c-4b4e-a68b-5b6d54a438a8"
       },
-      "created_at" => "2015-03-20T04:51:48Z"
+      "created_at" => "2015-03-20T04:51:48Z",
+      "amount_refunded" => 108,
+      "refunds" =>
+        [{"id" => "bdd5d67a0a5a67dc2779bc7726119ece",
+        "resource" => "refund",
+        "amount" => 108,
+        "currency" => "JPY",
+        "payment" => "9eb7efedb13cedd7963dfa3b78",
+        "description" => "Full Refund",
+        }]
     }
   end
 
