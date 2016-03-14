@@ -3,7 +3,4 @@ rvm:
 script: "bundle exec rake test:units"
 cache: bundler
 notifications:
-  hipchat:
-    rooms:
-      secure: gdprkPxgAfbKU4AJlCJ3R820Z6y+xOWAwt7+bT7DVsOSke3uMWOTzQ9bVKMb6n74R0cctq8mAYh28o5MJVxOiXNFNhHblhGdJlNxB9ZoDwLkQ6Kx/vDBGoLpqeBIA8EaD6FYCtoWBruZeu45TxR/ldYa22BjnmyNNL4acwegq/E=
   slack: degica:5qSWYJuIKSySc5KqlxwIoNRd
