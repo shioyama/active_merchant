@@ -1,6 +1,7 @@
 rvm:
-  - 1.9.3
-script: "bundle exec rake test:units"
+- 1.9.3
+script: bundle exec rake test:units
 cache: bundler
 notifications:
-  slack: degica:5qSWYJuIKSySc5KqlxwIoNRd
+  slack:
+    secure: kQeANhtcKjBwtBbIrz9+ATyRzRsuL3uz6I0t+vs94LbBDKry3rOI253lj3EI9WaHdzTTd3FdbMIiLxm8BL+c1ANE/xDmrvEqU+jsXAMyLpuTvwqN+Ne7AfA+3tRCxPJrJC1Zje+nPyjueQOdQbO7sut19G4909x3STA/StAZNik=
